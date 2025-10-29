@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Voice Tutor</title>
+  <style>
+    body {
+      font-family: Poppins, sans-serif;
+      background: linear-gradient(to bottom right, #4facfe, #00f2fe);
+      height: 100vh;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+    }
+    button {
+      background: white;
+      color: #0078ff;
+      border: none;
+      padding: 15px 25px;
+      border-radius: 12px;
+      font-size: 18px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.recording {
+      background: red;
+      color: white;
+    }
+    audio {
+      margin-top: 20px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎓 AI Voice Tutor</h1>
+  <button id="recordButton">🎙️ Start Speaking</button>
+  <audio id="responseAudio" controls></audio>
+
+  <script>
+    const recordButton = document.getElementById("recordButton");
+    const responseAudio = document.getElementById("responseAudio");
+    let mediaRecorder, audioChunks = [];
+
+    recordButton.addEventListener("click", async () => {
+      if (mediaRecorder && mediaRecorder.state === "recording") {
+        mediaRecorder.stop();
+        recordButton.textContent = "🎙️ Start Speaking";
+        recordButton.classList.remove("recording");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      recordButton.textContent = "🛑 Stop Recording";
+      recordButton.classList.add("recording");
+
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(audioChunks, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", blob);
+
+        recordButton.textContent = "Processing...";
+        recordButton.disabled = true;
+
+        // 👉 change this to your deployed backend
+        // const BACKEND_URL = "https://next-wave.onrender.com/voice";
+        const BACKEND_URL = "http://localhost:3000/voice";
+
+        const response = await fetch(BACKEND_URL, {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await response.blob();
+        const audioUrl = URL.createObjectURL(result);
+        responseAudio.src = audioUrl;
+
+        recordButton.textContent = "🎙️ Start Speaking";
+        recordButton.disabled = false;
+      };
+    });
+  </script>
+</body>
+</html>

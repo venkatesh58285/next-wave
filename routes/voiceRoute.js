@@ -1,8 +1,12 @@
 import express from "express";
-import { handleIncomingCall, handleSpeechResponse } from "../controllers/voiceController.js";
+import multer from "multer";
+import { handleIncomingCall, handleSpeechResponse, handleBrowserAudioUpload } from "../controllers/voiceController.js";
 const router = express.Router();
 
-router.post("/", handleIncomingCall);
+const upload = multer({ dest: "uploads/" });
+
+router.post("/", upload.single("audio"), handleBrowserAudioUpload);
+router.post("/twilio", handleIncomingCall);
 router.post("/response", handleSpeechResponse);
 
 export default router;

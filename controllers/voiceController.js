@@ -1,7 +1,9 @@
 import twilio from "twilio";
 import fetch from "node-fetch";
+import { recognizeSpeech } from "../utils/speechToText.js";
 import { synthesizeSpeech } from "../utils/textToSpeech.js";
 import path from "path";
+import fs from "fs";
 
 const __dirname = process.cwd();
 const VoiceResponse = twilio.twiml.VoiceResponse;
@@ -22,6 +24,33 @@ async function generateAnswer(question) {
     "Sorry, I couldn’t find an answer."
   );
 }
+
+export const handleBrowserAudioUpload = async (req, res) => {
+  try {
+    if (!req.file?.path) {
+      return res.status(400).json({ error: "No audio file uploaded" });
+    }
+
+    const question = await recognizeSpeech(req.file.path);
+    const answer = await generateAnswer(question || "Explain the question could not be recognized.");
+
+    const responsesDir = path.join(process.cwd(), "public", "responses");
+    if (!fs.existsSync(responsesDir)) fs.mkdirSync(responsesDir, { recursive: true });
+
+    const outputPath = path.join(responsesDir, `answer-${Date.now()}.mp3`);
+    await synthesizeSpeech(answer, outputPath);
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    fs.createReadStream(outputPath).pipe(res);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Processing failed" });
+  } finally {
+    if (req.file?.path) {
+      fs.unlink(req.file.path, () => {});
+    }
+  }
+};
 
 export const handleIncomingCall = async (req, res) => {
   const twiml = new VoiceResponse();

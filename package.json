@@ -13,9 +13,11 @@
   "description": "",
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.4.0",
+    "@google-cloud/speech": "^6.6.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "googleapis": "^164.1.0",
+    "multer": "^1.4.5-lts.1",
     "node-fetch": "^3.3.2",
     "twilio": "^5.10.4"
   }
